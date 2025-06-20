@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shuffler Photo Viewer</title>
+    <link rel="icon" type="image/svg+xml" href="shuffle-icon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Paused Indicator (top left) -->
+    <div id="paused-indicator" style="display: none">Paused</div>
+
+    <!-- Top Bar: Selection buttons and info messages -->
+    <div id="top-bar">
+      <button id="select-folder">Select Folder</button>
+      <button id="select-files" style="display: none">Select Images</button>
+      <input
+        type="file"
+        id="file-input"
+        multiple
+        accept="image/*"
+        style="display: none"
+      />
+      <div
+        id="browser-warning"
+        class="info-message"
+        style="display: none"
+      ></div>
+      <div id="chromium-note" class="info-message">
+        Works best in Chromium browsers (Chrome, Edge, etc.)
+      </div>
+    </div>
+    <!-- Viewer Flex Container: Left Hitbox, Image, Right Hitbox -->
+    <div id="viewer-flex">
+      <div id="hitbox-left" class="nav-hitbox"></div>
+      <img id="photo" src="" alt="Photo" />
+      <div id="hitbox-right" class="nav-hitbox"></div>
+    </div>
+
+    <!-- Arrow Icons for Visual Cues -->
+    <span id="arrow-left" class="arrow-icon">&#8592;</span>
+    <span id="arrow-right" class="arrow-icon">&#8594;</span>
+
+    <!-- Bottom Bar: Auto and Timer Controls -->
+    <div id="bottom-bar">
+      <label><input type="checkbox" id="auto" /> Auto</label>
+      <div>
+        <span style="cursor: default">Timer (seconds):</span>
+        <input type="number" id="timer" min="1" value="3" />
+      </div>
+      <span id="countdown"></span>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
