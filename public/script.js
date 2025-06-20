@@ -1,45 +1,58 @@
-// Default timer value (seconds)
+// =========================
+// Constants & Configuration
+// =========================
 const DEFAULT_TIMER = 3;
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"];
 
-// List of loaded image File objects
-let images = [];
-// Index of the currently displayed image
-let currentIndex = 0;
-// Shuffle mode toggle
-let shuffle = false;
-// Timer interval (seconds) for shuffle mode
-let timer = DEFAULT_TIMER;
-// Shuffle order and index for shuffle navigation
-let shuffleOrder = [];
-let shuffleIndex = 0;
-// Reference to the shuffle timer interval
-let shuffleInterval = null;
-
-// Auto-advance toggle and timer
-const autoCheckbox = document.getElementById("auto");
-let autoPaused = false;
-
-// DOM elements
+// =========================
+// DOM Element References
+// =========================
 const photo = document.getElementById("photo");
-const shuffleCheckbox = document.getElementById("shuffle");
 const timerInput = document.getElementById("timer");
 const selectFolderBtn = document.getElementById("select-folder");
 const selectFilesBtn = document.getElementById("select-files");
 const fileInput = document.getElementById("file-input");
 const browserWarning = document.getElementById("browser-warning");
 const pausedIndicator = document.getElementById("paused-indicator");
-
-// New hitbox elements
 const hitboxLeft = document.getElementById("hitbox-left");
 const hitboxRight = document.getElementById("hitbox-right");
+const countdownSpan = document.getElementById("countdown");
+const bottomBar = document.getElementById("bottom-bar");
+const timerInputField = document.getElementById("timer");
+const arrowLeft = document.getElementById("arrow-left");
+const arrowRight = document.getElementById("arrow-right");
+const autoCheckbox = document.getElementById("auto");
 
-// Supported image file extensions
-const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"];
+// =========================
+// State Variables
+// =========================
+let images = [];
+let shuffleOrder = [];
+let shuffleIndex = 0;
+let shuffleInterval = null;
+let timer = DEFAULT_TIMER;
+let countdownValue = timer;
+let countdownInterval = null;
+let autoPaused = false;
 
-// Helper: Get the current image index based on shuffle order
+// =========================
+// Helper Functions
+// =========================
+// Returns the current image index based on shuffle order
 const getCurrentImageIndex = () => shuffleOrder[shuffleIndex] ?? 0;
 
-// Helper: Set and sort images, then handle post-load logic
+// Hides the top bar (select buttons and info messages)
+const hideInfoMessages = () => {
+  document.getElementById("top-bar").style.display = "none";
+};
+
+// Checks if the browser supports the File System Access API
+const hasFileSystemAccess = "showDirectoryPicker" in window;
+
+// =========================
+// Shuffle & Image Logic
+// =========================
+// Sets and sorts images, then handles post-load logic
 const setImages = (newImages) => {
   images = newImages.slice().sort((a, b) =>
     a.name.localeCompare(b.name, undefined, {
@@ -51,7 +64,7 @@ const setImages = (newImages) => {
   onImagesLoaded();
 };
 
-// Generate a new random shuffle order
+// Generates a new random shuffle order
 const generateShuffleOrder = () => {
   shuffleOrder = images.map((_, i) => i);
   for (let i = shuffleOrder.length - 1; i > 0; i--) {
@@ -61,7 +74,7 @@ const generateShuffleOrder = () => {
   shuffleIndex = 0;
 };
 
-// Display the current image in the viewer
+// Displays the current image in the viewer
 const updateImage = () => {
   if (images.length === 0) {
     photo.src = "";
@@ -73,25 +86,24 @@ const updateImage = () => {
   photo.alt = file.name;
 };
 
-// Show the next image in shuffle order
+// =========================
+// Navigation Logic
+// =========================
 const showNext = () => {
   shuffleIndex = (shuffleIndex + 1) % shuffleOrder.length;
   updateImage();
   resetAutoTimer();
 };
 
-// Show the previous image in shuffle order
 const showPrev = () => {
   shuffleIndex = (shuffleIndex - 1 + shuffleOrder.length) % shuffleOrder.length;
   updateImage();
   resetAutoTimer();
 };
 
-const countdownSpan = document.getElementById("countdown");
-let countdownValue = timer;
-let countdownInterval = null;
-
-// Update the countdown display
+// =========================
+// Timer & Auto-Advance Logic
+// =========================
 const updateCountdown = () => {
   countdownSpan.textContent = `(${countdownValue}s)`;
   if (autoCheckbox.checked && !autoPaused) {
@@ -101,7 +113,6 @@ const updateCountdown = () => {
   }
 };
 
-// Start the auto-advance timer and countdown
 const startAutoTimer = () => {
   if (shuffleInterval) clearInterval(shuffleInterval);
   if (countdownInterval) clearInterval(countdownInterval);
@@ -128,7 +139,6 @@ const startAutoTimer = () => {
   }, timer * 1000);
 };
 
-// Stop the auto-advance timer and countdown
 const stopAutoTimer = () => {
   if (shuffleInterval) clearInterval(shuffleInterval);
   shuffleInterval = null;
@@ -138,7 +148,6 @@ const stopAutoTimer = () => {
   updateCountdown();
 };
 
-// Reset and restart the auto-advance timer and countdown if auto is enabled
 const resetAutoTimer = () => {
   if (autoCheckbox.checked && !autoPaused) {
     startAutoTimer();
@@ -147,7 +156,6 @@ const resetAutoTimer = () => {
   }
 };
 
-// Pause auto-advance and show indicator
 const pauseAuto = () => {
   if (autoCheckbox.checked && !autoPaused) {
     stopAutoTimer();
@@ -157,7 +165,7 @@ const pauseAuto = () => {
     updateCountdown();
   }
 };
-// Resume auto-advance and hide indicator
+
 const resumeAuto = () => {
   if (autoCheckbox.checked && autoPaused) {
     startAutoTimer();
@@ -165,17 +173,44 @@ const resumeAuto = () => {
     pausedIndicator.style.display = "none";
   }
 };
-// Hide paused indicator and reset pause state
+
 const resetPause = () => {
   autoPaused = false;
   pausedIndicator.style.display = "none";
 };
 
-// Navigation and auto/timer event listeners for hitboxes
+// DRY: Toggle pause/play logic
+const togglePausePlay = () => {
+  if (!autoCheckbox.checked) return;
+  if (autoPaused) {
+    resumeAuto();
+    updateCountdown();
+  } else {
+    pauseAuto();
+  }
+};
+
+// =========================
+// Image Loading Logic
+// =========================
+const onImagesLoaded = () => {
+  generateShuffleOrder();
+  shuffleIndex = 0;
+  updateImage();
+  stopAutoTimer();
+  resetPause();
+  updateCountdown();
+};
+
+// =========================
+// Event Listeners
+// =========================
+// Navigation
 hitboxLeft.addEventListener("click", showPrev);
 hitboxRight.addEventListener("click", showNext);
 
-autoCheckbox.addEventListener("change", (e) => {
+// Auto-advance toggle
+autoCheckbox.addEventListener("change", () => {
   if (autoCheckbox.checked) {
     startAutoTimer();
   } else {
@@ -191,26 +226,6 @@ timerInput.addEventListener("change", (e) => {
   resetAutoTimer();
 });
 
-// Detect if the browser supports the File System Access API (for folder selection)
-const hasFileSystemAccess = "showDirectoryPicker" in window;
-
-// Show/hide UI elements based on browser capability
-if (!hasFileSystemAccess) {
-  selectFolderBtn.style.display = "none";
-  selectFilesBtn.style.display = "";
-  browserWarning.style.display = "";
-  browserWarning.textContent =
-    "Folder selection is only available in Chromium browsers (Chrome, Edge, etc.). You can still select multiple images manually.";
-} else {
-  selectFilesBtn.style.display = "none";
-  browserWarning.style.display = "none";
-}
-
-// Hide the top bar (select buttons and info messages) after selection
-const hideInfoMessages = () => {
-  document.getElementById("top-bar").style.display = "none";
-};
-
 // Folder selection (Chromium browsers)
 selectFolderBtn.addEventListener("click", async () => {
   if (!hasFileSystemAccess) return;
@@ -220,7 +235,7 @@ selectFolderBtn.addEventListener("click", async () => {
     for await (const entry of dirHandle.values()) {
       if (
         entry.kind === "file" &&
-        imageExtensions.some((ext) => entry.name.toLowerCase().endsWith(ext))
+        IMAGE_EXTENSIONS.some((ext) => entry.name.toLowerCase().endsWith(ext))
       ) {
         const file = await entry.getFile();
         newImages.push(file);
@@ -241,23 +256,10 @@ selectFilesBtn.addEventListener("click", () => {
 // Handle file input change (user selects images)
 fileInput.addEventListener("change", (e) => {
   const newImages = Array.from(e.target.files).filter((file) =>
-    imageExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+    IMAGE_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext))
   );
   setImages(newImages);
 });
-
-// When new images are loaded, always generate shuffle order and start at the first image
-const onImagesLoaded = () => {
-  generateShuffleOrder();
-  shuffleIndex = 0;
-  updateImage();
-  stopAutoTimer();
-  resetPause();
-  updateCountdown();
-};
-
-const bottomBar = document.getElementById("bottom-bar");
-const timerInputField = document.getElementById("timer");
 
 // Toggle auto when clicking anywhere on the bottom bar except the timer input
 bottomBar.addEventListener("click", (e) => {
@@ -266,22 +268,8 @@ bottomBar.addEventListener("click", (e) => {
   autoCheckbox.dispatchEvent(new Event("change"));
 });
 
-// DRY: Toggle pause/play logic
-function togglePausePlay() {
-  if (!autoCheckbox.checked) return;
-  if (autoPaused) {
-    resumeAuto();
-    updateCountdown();
-  } else {
-    pauseAuto();
-  }
-}
-
 // Pause/play is now handled by clicking the image itself
 photo.addEventListener("click", togglePausePlay);
-
-const arrowLeft = document.getElementById("arrow-left");
-const arrowRight = document.getElementById("arrow-right");
 
 // Show/hide arrow icons on hitbox hover
 hitboxLeft.addEventListener("mouseenter", () =>
@@ -315,3 +303,18 @@ window.addEventListener("DOMContentLoaded", () => {
   timerInput.value = DEFAULT_TIMER;
   updateCountdown();
 });
+
+// =========================
+// Initialization
+// =========================
+// Show/hide UI elements based on browser capability
+if (!hasFileSystemAccess) {
+  selectFolderBtn.style.display = "none";
+  selectFilesBtn.style.display = "";
+  browserWarning.style.display = "";
+  browserWarning.textContent =
+    "Folder selection is only available in Chromium browsers (Chrome, Edge, etc.). You can still select multiple images manually.";
+} else {
+  selectFilesBtn.style.display = "none";
+  browserWarning.style.display = "none";
+}
