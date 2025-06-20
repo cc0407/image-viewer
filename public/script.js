@@ -24,22 +24,23 @@ const arrowRight = document.getElementById("arrow-right");
 const autoCheckbox = document.getElementById("auto");
 
 // =========================
-// State Variables
+// State Variables (attach to window for testability)
 // =========================
-let images = [];
-let shuffleOrder = [];
-let shuffleIndex = 0;
-let shuffleInterval = null;
-let timer = DEFAULT_TIMER;
-let countdownValue = timer;
-let countdownInterval = null;
-let autoPaused = false;
+window.images = window.images || [];
+window.shuffleOrder = window.shuffleOrder || [];
+window.shuffleIndex = window.shuffleIndex || 0;
+window.shuffleInterval = window.shuffleInterval || null;
+window.timer = window.timer || DEFAULT_TIMER;
+window.countdownValue = window.countdownValue || window.timer;
+window.countdownInterval = window.countdownInterval || null;
+window.autoPaused = window.autoPaused || false;
 
 // =========================
 // Helper Functions
 // =========================
 // Returns the current image index based on shuffle order
-const getCurrentImageIndex = () => shuffleOrder[shuffleIndex] ?? 0;
+const getCurrentImageIndex = () =>
+  window.shuffleOrder[window.shuffleIndex] ?? 0;
 
 // Hides the top bar (select buttons and info messages)
 const hideInfoMessages = () => {
@@ -54,7 +55,7 @@ const hasFileSystemAccess = "showDirectoryPicker" in window;
 // =========================
 // Sets and sorts images, then handles post-load logic
 const setImages = (newImages) => {
-  images = newImages.slice().sort((a, b) =>
+  window.images = newImages.slice().sort((a, b) =>
     a.name.localeCompare(b.name, undefined, {
       numeric: true,
       sensitivity: "base",
@@ -66,22 +67,25 @@ const setImages = (newImages) => {
 
 // Generates a new random shuffle order
 const generateShuffleOrder = () => {
-  shuffleOrder = images.map((_, i) => i);
-  for (let i = shuffleOrder.length - 1; i > 0; i--) {
+  window.shuffleOrder = window.images.map((_, i) => i);
+  for (let i = window.shuffleOrder.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
+    [window.shuffleOrder[i], window.shuffleOrder[j]] = [
+      window.shuffleOrder[j],
+      window.shuffleOrder[i],
+    ];
   }
-  shuffleIndex = 0;
+  window.shuffleIndex = 0;
 };
 
 // Displays the current image in the viewer
 const updateImage = () => {
-  if (images.length === 0) {
+  if (window.images.length === 0) {
     photo.src = "";
     photo.alt = "No images found.";
     return;
   }
-  const file = images[getCurrentImageIndex()];
+  const file = window.images[getCurrentImageIndex()];
   photo.src = URL.createObjectURL(file);
   photo.alt = file.name;
 };
@@ -90,13 +94,15 @@ const updateImage = () => {
 // Navigation Logic
 // =========================
 const showNext = () => {
-  shuffleIndex = (shuffleIndex + 1) % shuffleOrder.length;
+  window.shuffleIndex = (window.shuffleIndex + 1) % window.shuffleOrder.length;
   updateImage();
   resetAutoTimer();
 };
 
 const showPrev = () => {
-  shuffleIndex = (shuffleIndex - 1 + shuffleOrder.length) % shuffleOrder.length;
+  window.shuffleIndex =
+    (window.shuffleIndex - 1 + window.shuffleOrder.length) %
+    window.shuffleOrder.length;
   updateImage();
   resetAutoTimer();
 };
@@ -105,8 +111,8 @@ const showPrev = () => {
 // Timer & Auto-Advance Logic
 // =========================
 const updateCountdown = () => {
-  countdownSpan.textContent = `(${countdownValue}s)`;
-  if (autoCheckbox.checked && !autoPaused) {
+  countdownSpan.textContent = `(${window.countdownValue}s)`;
+  if (autoCheckbox.checked && !window.autoPaused) {
     countdownSpan.classList.remove("invisible");
   } else {
     countdownSpan.classList.add("invisible");
@@ -114,42 +120,42 @@ const updateCountdown = () => {
 };
 
 const startAutoTimer = () => {
-  if (shuffleInterval) clearInterval(shuffleInterval);
-  if (countdownInterval) clearInterval(countdownInterval);
-  countdownValue = timer;
+  if (window.shuffleInterval) clearInterval(window.shuffleInterval);
+  if (window.countdownInterval) clearInterval(window.countdownInterval);
+  window.countdownValue = window.timer;
   updateCountdown();
-  countdownInterval = setInterval(() => {
-    if (autoCheckbox.checked && !autoPaused) {
-      countdownValue--;
+  window.countdownInterval = setInterval(() => {
+    if (autoCheckbox.checked && !window.autoPaused) {
+      window.countdownValue--;
       updateCountdown();
-      if (countdownValue <= 0) {
-        countdownValue = timer;
+      if (window.countdownValue <= 0) {
+        window.countdownValue = window.timer;
       }
     }
   }, 1000);
-  shuffleInterval = setInterval(() => {
-    if (shuffleIndex === shuffleOrder.length - 1) {
+  window.shuffleInterval = setInterval(() => {
+    if (window.shuffleIndex === window.shuffleOrder.length - 1) {
       generateShuffleOrder();
       updateImage();
     } else {
       showNext();
     }
-    countdownValue = timer;
+    window.countdownValue = window.timer;
     updateCountdown();
-  }, timer * 1000);
+  }, window.timer * 1000);
 };
 
 const stopAutoTimer = () => {
-  if (shuffleInterval) clearInterval(shuffleInterval);
-  shuffleInterval = null;
-  if (countdownInterval) clearInterval(countdownInterval);
-  countdownInterval = null;
-  countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
+  if (window.shuffleInterval) clearInterval(window.shuffleInterval);
+  window.shuffleInterval = null;
+  if (window.countdownInterval) clearInterval(window.countdownInterval);
+  window.countdownInterval = null;
+  window.countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
   updateCountdown();
 };
 
 const resetAutoTimer = () => {
-  if (autoCheckbox.checked && !autoPaused) {
+  if (autoCheckbox.checked && !window.autoPaused) {
     startAutoTimer();
   } else {
     updateCountdown();
@@ -157,32 +163,32 @@ const resetAutoTimer = () => {
 };
 
 const pauseAuto = () => {
-  if (autoCheckbox.checked && !autoPaused) {
+  if (autoCheckbox.checked && !window.autoPaused) {
     stopAutoTimer();
-    autoPaused = true;
+    window.autoPaused = true;
     pausedIndicator.style.display = "";
-    countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
+    window.countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
     updateCountdown();
   }
 };
 
 const resumeAuto = () => {
-  if (autoCheckbox.checked && autoPaused) {
+  if (autoCheckbox.checked && window.autoPaused) {
     startAutoTimer();
-    autoPaused = false;
+    window.autoPaused = false;
     pausedIndicator.style.display = "none";
   }
 };
 
 const resetPause = () => {
-  autoPaused = false;
+  window.autoPaused = false;
   pausedIndicator.style.display = "none";
 };
 
 // DRY: Toggle pause/play logic
 const togglePausePlay = () => {
   if (!autoCheckbox.checked) return;
-  if (autoPaused) {
+  if (window.autoPaused) {
     resumeAuto();
     updateCountdown();
   } else {
@@ -195,7 +201,7 @@ const togglePausePlay = () => {
 // =========================
 const onImagesLoaded = () => {
   generateShuffleOrder();
-  shuffleIndex = 0;
+  window.shuffleIndex = 0;
   updateImage();
   stopAutoTimer();
   resetPause();
@@ -216,13 +222,13 @@ autoCheckbox.addEventListener("change", () => {
   } else {
     stopAutoTimer();
     resetPause();
-    countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
+    window.countdownValue = parseInt(timerInput.value) || DEFAULT_TIMER;
     updateCountdown();
   }
 });
 
 timerInput.addEventListener("change", (e) => {
-  timer = parseInt(e.target.value) || DEFAULT_TIMER;
+  window.timer = parseInt(e.target.value) || DEFAULT_TIMER;
   resetAutoTimer();
 });
 
@@ -317,4 +323,30 @@ if (!hasFileSystemAccess) {
 } else {
   selectFilesBtn.style.display = "none";
   browserWarning.style.display = "none";
+}
+
+// =========================
+// Attach functions and state to window for testing and app access
+// =========================
+if (typeof window !== "undefined") {
+  window.DEFAULT_TIMER = DEFAULT_TIMER;
+  window.getCurrentImageIndex = getCurrentImageIndex;
+  window.hideInfoMessages = hideInfoMessages;
+  window.setImages = setImages;
+  window.generateShuffleOrder = generateShuffleOrder;
+  window.updateImage = updateImage;
+  window.showNext = showNext;
+  window.showPrev = showPrev;
+  window.startAutoTimer = startAutoTimer;
+  window.stopAutoTimer = stopAutoTimer;
+  window.pauseAuto = pauseAuto;
+  window.resumeAuto = resumeAuto;
+  window.resetAutoTimer = resetAutoTimer;
+  window.resetPause = resetPause;
+  window.togglePausePlay = togglePausePlay;
+  window.images = window.images;
+  window.shuffleOrder = window.shuffleOrder;
+  window.shuffleIndex = window.shuffleIndex;
+  window.timer = window.timer;
+  window.autoPaused = window.autoPaused;
 }
