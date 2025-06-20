@@ -344,6 +344,7 @@ if (typeof window !== "undefined") {
   window.resetAutoTimer = resetAutoTimer;
   window.resetPause = resetPause;
   window.togglePausePlay = togglePausePlay;
+  window.onImagesLoaded = onImagesLoaded;
   window.images = window.images;
   window.shuffleOrder = window.shuffleOrder;
   window.shuffleIndex = window.shuffleIndex;

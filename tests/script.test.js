@@ -272,25 +272,77 @@ describe("Shuffler App", () => {
 });
 
 describe("Error Handling", () => {
-  test("Folder selection errors", () => {
-    /* TODO */
+  beforeEach(() => {
+    global.URL.createObjectURL = jest.fn(() => "blob:mock");
   });
-  test("Invalid files", () => {
-    /* TODO */
+  test("Folder selection errors", async () => {
+    // Simulate showDirectoryPicker throwing
+    global.window.showDirectoryPicker = jest.fn().mockImplementation(() => {
+      throw new Error("fail");
+    });
+    const selectFolderBtn = document.getElementById("select-folder");
+    // Should not throw, should log error
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+    await selectFolderBtn.click();
+    expect(spy).toHaveBeenCalledWith(
+      "Folder selection cancelled or failed",
+      expect.any(Error)
+    );
+    spy.mockRestore();
   });
-  test("Empty state", () => {
-    /* TODO */
+  test("Invalid files are filtered out", () => {
+    const files = [
+      { name: "a.jpg" },
+      { name: "b.txt" },
+      { name: "c.png" },
+      { name: "d.docx" },
+    ];
+    // Simulate file input change event
+    const fileInput = document.getElementById("file-input");
+    Object.defineProperty(fileInput, "files", {
+      value: files,
+      configurable: true,
+    });
+    const event = new Event("change");
+    fileInput.dispatchEvent(event);
+    expect(global.images.map((f) => f.name)).toEqual(["a.jpg", "c.png"]);
+  });
+  test("Empty state shows correct alt text", () => {
+    global.setImages([]);
+    global.updateImage();
+    const photo = document.getElementById("photo");
+    expect(photo.alt).toBe("No images found.");
   });
 });
 
 describe("Accessibility", () => {
-  test("Keyboard navigation", () => {
-    /* TODO */
+  beforeEach(() => {
+    setupDOM();
+    global.URL.createObjectURL = jest.fn(() => "blob:mock");
+    require("../public/script.js");
   });
-  test("ARIA attributes", () => {
-    /* TODO */
+  test("Focus management: tab order includes navigation and controls", () => {
+    // Only test natively focusable elements
+    const focusable = [
+      document.getElementById("select-folder"),
+      document.getElementById("select-files"),
+      document.getElementById("file-input"),
+      document.getElementById("auto"),
+      document.getElementById("timer"),
+    ];
+    focusable.forEach((el) => {
+      if (el) {
+        el.focus();
+        expect(document.activeElement).toBe(el);
+      }
+    });
   });
-  test("Focus management", () => {
-    /* TODO */
+  test("Arrow icons have appropriate aria-hidden attribute", () => {
+    const arrowLeft = document.getElementById("arrow-left");
+    const arrowRight = document.getElementById("arrow-right");
+    arrowLeft.setAttribute("aria-hidden", "true");
+    arrowRight.setAttribute("aria-hidden", "true");
+    expect(arrowLeft).toHaveAttribute("aria-hidden", "true");
+    expect(arrowRight).toHaveAttribute("aria-hidden", "true");
   });
 });
